@@ -1,10 +1,8 @@
 # Logalot
 
-A minimal Docker-compose setup with a Rails app to test Datadog log collection by generating logs every 10 seconds.
+A minimal Docker-compose setup with a Rails app to test Datadog log collection with Structured Event Reporting by generating logs every 10 seconds.
 
-## Purpose
-
-This application serves as a test environment for Datadog log monitoring. It continuously generates log entries at regular intervals to verify log collection, parsing, and visualization in Datadog.
+More infos on Structured Event Reporting [here](https://github.com/rails/rails/pull/55334/files#diff-b62185ac41b8fd41482706d038907fd8b570b2aaa3ad535cddb409173827bb03).
 
 ### Prerequisites
 
@@ -27,13 +25,20 @@ This application serves as a test environment for Datadog log monitoring. It con
 
 ## How it works
 
-The application runs a background thread that logs "logloglog" every 10 seconds:
+The application runs a background thread that logs an UserCreated event every 10 seconds:
 
 ```ruby
 # config/initializers/logalot.rb
 Thread.new do
   loop do
-    Rails.logger.info "logloglog"
+    user = {
+      id: rand(10000),
+      type: rand(10) % 2 == 0 ? "User" : "Admin"
+    }
+
+    event = Events::User::UserCreated.new(user)
+    Rails.event.notify(event)
+
     sleep 10
   end
 end
